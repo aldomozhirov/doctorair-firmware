@@ -1,0 +1,7 @@
+/core/
+/libraries/
+/makefile
+/objects.mk
+/sources/
+/sources.mk
+/subdir.mk
