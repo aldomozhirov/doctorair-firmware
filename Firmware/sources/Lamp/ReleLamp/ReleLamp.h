@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include "../../../sources/Lamp/AbstractLamp.h"
 #include "../../../sources/Memory/Field.h"
+#include "../../../sources/Logger/Logger.h"
 
 #define CIRCUIT_DELAY	300
 

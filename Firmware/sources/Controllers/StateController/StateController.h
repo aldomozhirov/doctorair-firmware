@@ -17,17 +17,16 @@ class StateController {
 		StateController(AbstractLamp& _lamp, AbstractCooler& _cooler, AbstractInterface& _interface);
 		bool setState(String json);
 		String getState();
-		String getMode();
-		bool switchMode(String _mode);
-		void setOnline(bool _isOnline);
-		void setService(bool _isService);
+		int getMode();
+		bool setMode(int _mode);
+		void setOnline(bool _is_online);
+		bool isOnline();
 	private:
 		AbstractLamp* lamp;
 		AbstractCooler* cooler;
 		AbstractInterface* interface;
-		String mode;
-		bool isOnline;
-		bool isService;
+		int mode;
+		bool is_online;
 		void updateInterface();
 
 		static char buffer[BUFFER_SIZE];

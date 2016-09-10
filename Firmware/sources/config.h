@@ -19,8 +19,8 @@
 #include "Memory/Field.h"
 #include "Logger/Logger.h"
 
-#define LAMP_PIN          2
-#define COOLER_PIN        7
+#define LAMP_PIN          5
+#define COOLER_PIN        6
 #define HUMIDITY_PIN      4
 #define TEMPERATURE_PIN   4
 #define CO_PIN            A0
@@ -35,6 +35,7 @@
 
 #define INTERFACE_INTERRUPT_PIN		19
 #define USB_INTERRUPT_PIN			3
+#define WIFI_INTERRUPT_PIN			2
 
 #define SSID      "Innopolis"
 #define PASSWORD  "Innopolis"

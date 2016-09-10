@@ -30,9 +30,10 @@ void setup()
 {
     attachInterrupt(digitalPinToInterrupt(INTERFACE_INTERRUPT_PIN), interface_event, CHANGE);
     attachInterrupt(digitalPinToInterrupt(USB_INTERRUPT_PIN), usb_event, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(WIFI_INTERRUPT_PIN), wifi_event, CHANGE);
     Serial.begin(57600);
     SoftTimer.add(&t1);
-    SoftTimer.add(&t2);
+    //SoftTimer.add(&t2);
     SoftTimer.add(&t3);
     Logger::append("Start working");
 }
@@ -50,10 +51,14 @@ void sensors_update_task(Task* me)
 
 void synchronization_task(Task* me)
 {
+	detachInterrupt(digitalPinToInterrupt(WIFI_INTERRUPT_PIN));
     bool isSuccess = false;
 
     if (connection.isConnected()) {
-    	state_controller.setOnline(true);
+    	if (!state_controller.isOnline()) {
+    		state_controller.setOnline(true);
+    		Logger::append("Connected to WiFi");
+    	}
     	if (isChanged) {
     		isSuccess = request("/commands/recirculator_request_1_" + state_controller.getState() + "_" + sensors_controller.getSensorsValues());
     		if (isSuccess) {
@@ -65,9 +70,13 @@ void synchronization_task(Task* me)
     	}
     }
     else {
-    	state_controller.setOnline(false);
+    	if (state_controller.isOnline()) {
+    		Logger::append("WiFi disconnected");
+    		state_controller.setOnline(false);
+    	}
     	connection.connect();
     }
+    attachInterrupt(digitalPinToInterrupt(WIFI_INTERRUPT_PIN), wifi_event, CHANGE);
 }
 
 bool request(String command) {
@@ -93,12 +102,17 @@ void interface_event() {
   interrupts();
 
   String command = interface.getCommand();
-    if (command.indexOf("BUTTON1") != -1) {
-      if (state_controller.getMode().compareTo("0") == 0) {
-        state_controller.switchMode("1");
+    if (command.startsWith("BUTTON1")) {
+      if (state_controller.getMode() == 0) {
+    	lamp.switchOn();
+    	cooler.setIntensivity(100);
+    	cooler.switchOn();
+        state_controller.setMode(1);
       }
       else {
-        state_controller.switchMode("0");
+    	lamp.switchOff();
+    	cooler.switchOff();
+        state_controller.setMode(0);
       }
       isChanged = true;
     }
@@ -110,20 +124,34 @@ void usb_event() {
 	interrupts();
 
     String input = Serial.readString();
-    if (input == "state")
-      Serial.println(state_controller.getState());
-    else if (input == "sensors")
-      Serial.println(sensors_controller.getSensorsValues());
-    else if (input == "version")
-      Serial.println(VERSION);
-    else if (input == "logs")
-      Serial.println(Logger::getAll());
-    else if (input == "reset lamp count")
+    if (input == "SST") {
+      Serial.print(state_controller.getState());
+    }
+    else if (input == "SEN") {
+      Serial.print(sensors_controller.getSensorsValues());
+    }
+    else if (input == "VER") {
+      Serial.print(VERSION);
+    }
+    else if (input == "LOG") {
+      Serial.print(Logger::getAll());
+    }
+    else if (input == "RLC") {
       lamp.resetCount();
-    else if (input == 0)
-      Serial.println("-");
-    else
-      Serial.println("ERROR");
+    }
+    else if (input == 0) {
+
+    }
+    else {
+      Serial.print("ERROR");
+    }
 
 	attachInterrupt(digitalPinToInterrupt(USB_INTERRUPT_PIN), usb_event, CHANGE);
+}
+
+void wifi_event() {
+	detachInterrupt(digitalPinToInterrupt(WIFI_INTERRUPT_PIN));
+	interrupts();
+
+	attachInterrupt(digitalPinToInterrupt(WIFI_INTERRUPT_PIN), wifi_event, CHANGE);
 }

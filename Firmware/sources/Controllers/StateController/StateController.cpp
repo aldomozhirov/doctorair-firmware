@@ -6,9 +6,8 @@ StateController::StateController(AbstractLamp& _lamp, AbstractCooler& _cooler, A
 	lamp = &_lamp;
 	cooler = &_cooler;
 	interface = &_interface;
-	mode = "0";
-	isOnline = false;
-	isService = false;
+	mode = 0;
+	is_online = false;
 }
 
 bool StateController::setState(String json) {
@@ -60,12 +59,10 @@ bool StateController::setState(String json) {
 			return false;
 	}
 
-	isService = (bool)root["is_serviced"];
+	int i_mode = (int)root["mode"];
 
-	String i_mode = String((int)root["mode"]);
-
-	if(i_mode.compareTo(mode) != 0)
-		switchMode(i_mode);
+	if(i_mode != mode)
+		setMode(i_mode);
 
 	return true;
 }
@@ -79,60 +76,39 @@ String StateController::getState() {
 	cooler_o["intensivity"] = cooler->getIntensivity();
 	lamp_o["state"] = lamp->getState();
 	lamp_o["count"] = lamp->getCount();
-	root["mode"] = mode.toInt();
+	root["mode"] = mode;
 	root.printTo(buffer, sizeof(buffer));
 	return (String)buffer;
 }
 
-String StateController::getMode() {
+int StateController::getMode() {
 	return mode;
 }
 
-void StateController::setOnline(bool _isOnline) {
-	isOnline = _isOnline;
-	updateInterface();
+void StateController::setOnline(bool _is_online) {
+	if (is_online != _is_online) {
+		is_online = _is_online;
+		interface->sendCommand(is_online ? "ONLINE" : "OFFLINE");
+	}
 }
 
-void StateController::setService(bool _isService) {
-	isService = _isService;
-	updateInterface();
+bool StateController::isOnline() {
+	return is_online;
 }
 
-bool StateController::switchMode(String _mode) {
-
-	if(_mode.compareTo("0") == 0) {
-		lamp->switchOff();
-      	cooler->switchOff();
+bool StateController::setMode(int _mode) {
+	if (_mode == -1) {
+		mode = _mode;
+		interface->sendCommand("MODE 0");
+		interface->sendCommand("SERVICE");
+		return true;
 	}
-	else if(_mode.compareTo("1") == 0) {
-		lamp->switchOn();
-      	cooler->setIntensivity(100);
-      	cooler->switchOn();
+	else if (_mode >= 0 && _mode <= 8) {
+		mode = _mode;
+		interface->sendCommand("MODE " + mode);
+		return true;
 	}
-	else if(_mode.compareTo("2") == 0) {
-	}
-	else if(_mode.compareTo("3") == 0) {
-	}
-	else if(_mode.compareTo("4") == 0) {
-	}
-	else if(_mode.compareTo("5") == 0) {
-	}
-	else if(_mode.compareTo("6") == 0) {
-	}
-	else if(_mode.compareTo("7") == 0) {
-	}
-	else if(_mode.compareTo("8") == 0) {
-	}
-	else 
+	else {
 		return false;
-
-	mode = _mode;
-	updateInterface();
-	return true;
-}
-
-void StateController::updateInterface() {
-	String command = "";
-	command = isService ? "SERVICE" : isOnline ? "ONLINE" + mode : "OFFLINE" + mode;
-	interface->sendCommand(command);
+	}
 }
