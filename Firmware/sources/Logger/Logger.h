@@ -8,6 +8,8 @@
 #ifndef SOURCES_LOGGER_LOGGER_H_
 #define SOURCES_LOGGER_LOGGER_H_
 
+#define LIMIT	20
+
 #include <Arduino.h>
 #include <SimpleList.h>
 

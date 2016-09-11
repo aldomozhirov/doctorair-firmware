@@ -1,15 +1,32 @@
 #include "../../../sources/Connection/WiFiConnection/WiFiConnection.h"
+#include "../../../sources/Logger/Logger.h"
 
-
-WiFiConnection::WiFiConnection(char* _ssid, char* _password, ESP8266& _wifi) {
-        ssid = _ssid;
-		password = _password;
+WiFiConnection::WiFiConnection(ESP8266& _wifi) {
 		wifi = &_wifi;    
 }
 
 bool WiFiConnection::connect() {
-	wifi->setOprToStationSoftAP();
-	return wifi->joinAP(String(ssid), String(password));
+	if (ssid.length() != 0) {
+		wifi->setOprToStationSoftAP();
+		return wifi->joinAP(ssid, password);
+	}
+	else {
+		Logger::append("WiFiConnection.cpp > AP ssid has not yet been established!");
+		return false;
+	}
+}
+
+bool WiFiConnection::connect(String _ssid, String _password) {
+    if (_ssid.length() != 0) {
+    	ssid = _ssid;
+		password = _password;
+		wifi->setOprToStationSoftAP();
+		return wifi->joinAP(ssid, password);
+    }
+    else {
+    	Logger::append("WiFiConnection.cpp > AP ssid name is empty!");
+    	return false;
+    }
 }
 
 bool WiFiConnection::isConnected() {

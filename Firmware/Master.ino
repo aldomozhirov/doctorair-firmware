@@ -17,7 +17,7 @@ Sensor *sensors[5] = {&co, &co2, &humidity, &pressure, &temperature};
 SensorsController sensors_controller(sensors, 5);
 
 ESP8266 wifi(WIFI_SERIAL_PORT, WIFI_SERIAL_BAUD);
-WiFiConnection connection(SSID, PASSWORD, wifi);
+WiFiConnection connection(wifi);
 WebServer server(HOST_NAME, HOST_PORT, connection);
 
 Task t1(1000, lamp_increment_task);
@@ -38,6 +38,38 @@ void setup()
     Logger::append("Start working");
 }
 
+bool connection_attempt(String ssid, String password) {
+	if (connection.connect(ssid, password)) {
+		Logger::append("Connected to WiFi");
+		if (!state_controller.isOnline()) {
+			state_controller.setOnline(true);
+		}
+		return true;
+	} else {
+		Logger::append("WiFi connection error");
+		if (state_controller.isOnline()) {
+			state_controller.setOnline(false);
+		}
+		return false;
+	}
+}
+
+bool reconnection_attempt() {
+	if (connection.connect()) {
+		Logger::append("Connected to WiFi");
+		if (!state_controller.isOnline()) {
+			state_controller.setOnline(true);
+		}
+		return true;
+	} else {
+		Logger::append("WiFi connection error");
+		if (state_controller.isOnline()) {
+			state_controller.setOnline(false);
+		}
+		return false;
+	}
+}
+
 void lamp_increment_task(Task* me)
 {
 	if (lamp.getState() == ON)
@@ -53,28 +85,22 @@ void synchronization_task(Task* me)
 {
 	detachInterrupt(digitalPinToInterrupt(WIFI_INTERRUPT_PIN));
     bool isSuccess = false;
-
-    if (connection.isConnected()) {
-    	if (!state_controller.isOnline()) {
-    		state_controller.setOnline(true);
-    		Logger::append("Connected to WiFi");
-    	}
-    	if (isChanged) {
-    		isSuccess = request("/commands/recirculator_request_1_" + state_controller.getState() + "_" + sensors_controller.getSensorsValues());
-    		if (isSuccess) {
-    			isChanged = false;
+    if (state_controller.isOnline()) {
+    	if (connection.isConnected()) {
+    		if (isChanged) {
+    			isSuccess = request("/commands/recirculator_request_1_" + state_controller.getState() + "_" + sensors_controller.getSensorsValues());
+    			if (isSuccess) {
+    				isChanged = false;
+    			}
+    		}
+    		else {
+    			isSuccess = request("/commands/recirculator_info_1_" + state_controller.getState() + "_" + sensors_controller.getSensorsValues());
     		}
     	}
     	else {
-    		isSuccess = request("/commands/recirculator_info_1_" + state_controller.getState() + "_" + sensors_controller.getSensorsValues());
+    		Logger::append("Error connecting to the internet. Trying to reconnect...");
+    		reconnection_attempt();
     	}
-    }
-    else {
-    	if (state_controller.isOnline()) {
-    		Logger::append("WiFi disconnected");
-    		state_controller.setOnline(false);
-    	}
-    	connection.connect();
     }
     attachInterrupt(digitalPinToInterrupt(WIFI_INTERRUPT_PIN), wifi_event, CHANGE);
 }
@@ -138,6 +164,31 @@ void usb_event() {
     }
     else if (input == "RLC") {
       lamp.resetCount();
+    }
+    else if (input == "CON") {
+    	if (state_controller.isOnline()) {
+    		Serial.print("ONLINE");
+    	}
+    	else {
+    		Serial.print("OFFLINE");
+    	}
+    }
+    else if (input.startsWith("WAP")) {
+    	int quote1 = input.indexOf("\"");
+    	int quote2 = input.indexOf("\"", quote1 + 1);
+    	int quote3 = input.indexOf("\"", quote2 + 1);
+    	int quote4 = input.indexOf("\"", quote3 + 1);
+    	if (quote1 != -1 && quote2 != -1 && quote3 != -1 && quote4 != -1) {
+    		String ssid = input.substring(quote1 + 1, quote2);
+    		String password = input.substring(quote3 + 1, quote4);
+    		if (connection_attempt(ssid, password)) {
+    			Serial.print("SUCCESS");
+    		}
+    		else {
+    			Serial.print("FAIL");
+    		}
+    	}
+
     }
     else if (input == 0) {
 

@@ -16,6 +16,8 @@ void Logger::append(String log) {
 	int s = time/1000 - h*60*60 - m*60;
 	int ms = time - h*60*60*1000 - m*60*1000 - s*1000;
 	String format_time = String(h) + ":" + String(m) + ":" + String(s) + ":" + String(ms);
+	if (list.size() > LIMIT)
+		list.clear();
 	list.push_back(format_time + " - " + log);
 }
 

@@ -37,13 +37,10 @@
 #define USB_INTERRUPT_PIN			3
 #define WIFI_INTERRUPT_PIN			2
 
-#define SSID      "Innopolis"
-#define PASSWORD  "Innopolis"
-
 #define HOST_NAME   "doctorair.tk"
 #define HOST_PORT   (80)
 
-#define VERSION		"1.0"
+#define VERSION		"1.2"
 
 #endif /* SOURCES_CONFIG_H_ */
 

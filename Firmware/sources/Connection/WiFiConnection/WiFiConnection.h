@@ -7,16 +7,17 @@
 class WiFiConnection: public Connection
 {
 	public:
-		WiFiConnection(char* _ssid, char* _password, ESP8266& _wifi);
+		WiFiConnection(ESP8266& _wifi);
 		bool connect();
+		bool connect(String _ssid, String _password);
 		bool isConnected();
 		bool connectTCP(char* host, int port);
 		bool disconnectTCP();
 		bool query(const char* query);
 		bool response(char* buffer, int buffer_size);
 	private:
-		char* ssid;
-		char* password;
+		String ssid;
+		String password;
 		ESP8266* wifi;
 };
 
